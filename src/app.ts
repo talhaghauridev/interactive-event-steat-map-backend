@@ -9,11 +9,17 @@ import routes from "./routes/routes";
 import ApiResponse from "./utils/ApiResponse";
 import ApiError from "./utils/ApiError";
 import { HTTP_STATUS } from "./utils/httpStatus";
+import favicon from "serve-favicon";
+import path from "path";
+import { fileURLToPath } from "url";
+// @ts-ignore
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 const payloadLimit = "50mb";
-
+app.use(favicon(path.join(__dirname, "..", "public", "favicon.jpg")));
 app.use(helmet(config.helmet));
 
 app.use(express.json({ limit: payloadLimit }));

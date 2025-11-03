@@ -4,6 +4,7 @@ import { RequestQueue } from "../queue/requestQueue";
 import { User } from "../types";
 import ApiError from "../utils/ApiError";
 import ApiResponse from "../utils/ApiResponse";
+import asyncHandler from "../utils/asyncHandler";
 import { createLogger } from "../utils/logger";
 import { mockDatabase } from "../utils/mockDatabase";
 import { PerformanceTracker } from "../utils/performanceTracker";
@@ -14,7 +15,7 @@ const userCache = new LRUCache<User>(100, 60);
 const requestQueue = new RequestQueue();
 const performanceTracker = new PerformanceTracker();
 
-export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+export const getUserById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
    const startTime = Date.now();
 
    try {
@@ -71,9 +72,9 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
       logger.error({ error }, "Error in getUserById");
       return ApiError.internalError(next);
    }
-};
+});
 
-export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+export const createUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
    try {
       const { name, email } = req.body;
 
@@ -103,9 +104,9 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
       logger.error({ error }, "Error in createUser");
       return ApiError.internalError(next);
    }
-};
+});
 
-export const getCacheStatus = (req: Request, res: Response, next: NextFunction) => {
+export const getCacheStatus = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
    try {
       const cacheStats = userCache.getStats();
       const queueStats = requestQueue.getStats();
@@ -124,9 +125,9 @@ export const getCacheStatus = (req: Request, res: Response, next: NextFunction) 
       logger.error({ error }, "Error in getCacheStatus");
       return ApiError.internalError(next);
    }
-};
+});
 
-export const clearCache = (req: Request, res: Response, next: NextFunction) => {
+export const clearCache = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
    try {
       userCache.clear();
 
@@ -143,6 +144,6 @@ export const clearCache = (req: Request, res: Response, next: NextFunction) => {
       logger.error({ error }, "Error in clearCache");
       return ApiError.internalError(next);
    }
-};
+});
 
 export { userCache };
