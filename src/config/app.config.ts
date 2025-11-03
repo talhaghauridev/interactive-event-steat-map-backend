@@ -4,7 +4,7 @@ import { CorsOptions } from "cors";
 import { HelmetOptions } from "helmet";
 
 const cors: CorsOptions = {
-   origin: ["*"],
+   origin: [env.NODE_ENV === "development" ? "*" : env.FRONTEND_URLS],
    credentials: true,
    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
    allowedHeaders: ["Content-Type", "Authorization", "Accept"]
