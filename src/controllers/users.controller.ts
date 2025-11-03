@@ -4,8 +4,11 @@ import { RequestQueue } from "../queue/requestQueue";
 import { User } from "../types";
 import ApiError from "../utils/ApiError";
 import ApiResponse from "../utils/ApiResponse";
+import { createLogger } from "../utils/logger";
 import { mockDatabase } from "../utils/mockDatabase";
 import { PerformanceTracker } from "../utils/performanceTracker";
+
+const logger = createLogger("users");
 
 const userCache = new LRUCache<User>(100, 60);
 const requestQueue = new RequestQueue();
@@ -27,7 +30,7 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
          const responseTime = Date.now() - startTime;
          performanceTracker.recordResponseTime(responseTime);
 
-         console.log(`[Cache HIT] User ${userId} - Response time: ${responseTime}ms`);
+         logger.info({ userId, responseTime, cached: true }, `Cache HIT: User ${userId}`);
 
          return ApiResponse.success(
             res,
@@ -40,18 +43,17 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
          );
       }
 
-      console.log(`[Cache MISS] User ${userId} - Fetching from database`);
+      logger.info({ userId }, `Cache MISS: User ${userId} - Fetching from database`);
 
       try {
          const user = await requestQueue.fetchUser(userId);
 
-         // Cache the result
          userCache.set(userId.toString(), user);
 
          const responseTime = Date.now() - startTime;
          performanceTracker.recordResponseTime(responseTime);
 
-         console.log(`[Database] User ${userId} fetched - Response time: ${responseTime}ms`);
+         logger.info({ userId, responseTime, cached: false }, `Database fetch complete: User ${userId}`);
 
          return ApiResponse.success(
             res,
@@ -66,7 +68,7 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
          return ApiError.notFound(next, "User not found");
       }
    } catch (error) {
-      console.error("[Error] getUserById:", error);
+      logger.error({ error }, "Error in getUserById");
       return ApiError.internalError(next);
    }
 };
@@ -88,7 +90,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 
       userCache.set(newUser.id.toString(), newUser);
 
-      console.log(`[Create] New user created with ID ${newUser.id}`);
+      logger.info({ userId: newUser.id, name: newUser.name }, `New user created: ${newUser.id}`);
 
       return ApiResponse.created(
          res,
@@ -98,7 +100,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
          "User created successfully"
       );
    } catch (error) {
-      console.error("[Error] createUser:", error);
+      logger.error({ error }, "Error in createUser");
       return ApiError.internalError(next);
    }
 };
@@ -119,7 +121,7 @@ export const getCacheStatus = (req: Request, res: Response, next: NextFunction) 
          "Cache status fetched successfully"
       );
    } catch (error) {
-      console.error("[Error] getCacheStatus:", error);
+      logger.error({ error }, "Error in getCacheStatus");
       return ApiError.internalError(next);
    }
 };
@@ -128,7 +130,7 @@ export const clearCache = (req: Request, res: Response, next: NextFunction) => {
    try {
       userCache.clear();
 
-      console.log("[Cache] Cache cleared manually");
+      logger.info("Cache cleared manually");
 
       return ApiResponse.success(
          res,
@@ -138,7 +140,7 @@ export const clearCache = (req: Request, res: Response, next: NextFunction) => {
          "Cache cleared successfully"
       );
    } catch (error) {
-      console.error("[Error] clearCache:", error);
+      logger.error({ error }, "Error in clearCache");
       return ApiError.internalError(next);
    }
 };

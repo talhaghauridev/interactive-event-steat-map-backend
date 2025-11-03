@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import { env } from "../env";
 import ApiError from "../utils/ApiError";
+import { logger } from "../utils/logger";
 
 const errorMiddleware = (err: Error | ApiError, req: Request, res: Response, next: NextFunction) => {
-   console.error("[Error Middleware]", {
+   logger.error({
       message: err.message,
-      stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+      statusCode: (err as ApiError).statusCode,
       path: req.path,
-      method: req.method
+      method: req.method,
+      stack: process.env.NODE_ENV === "development" ? err.stack : undefined
    });
 
    if (err instanceof ApiError) {
